@@ -97,7 +97,7 @@ function LabBuildHST:PrePositionFilter()
 			buildMe = false
 		end
 		if mtype == 'air' then
-			local counter = game:GetTeamUnitDefCount(self.ai.id,self.ai.armyhst.unitTable[factoryName].defId)
+			local counter = self.game:GetTeamUnitDefCount(self.ai.id,self.ai.armyhst.unitTable[factoryName].defId)
 			if counter > 0 then
 				self:EchoDebug(factoryName ..' never build more than 1 air factory per name, units can go anywhare ')
 				buildMe = false
@@ -179,7 +179,7 @@ function LabBuildHST:ConditionsToBuildFactories(builder)
 		)then
 
 			self:EchoDebug(factoryName .. ' conditions met')
-			local canBuild = builder:CanBuild(game:GetTypeByName(factoryName))
+			local canBuild = builder:CanBuild(self.game:GetTypeByName(factoryName))
 			if canBuild then
 				factoriesCount = factoriesCount + 1
 				factories[factoriesCount] = factoryName
@@ -201,6 +201,7 @@ function LabBuildHST:ConditionsToBuildFactories(builder)
 end
 
 function LabBuildHST:GetBuilderFactory(builder)
+	self.game:StartTimer('GetBuilderFactory'  .. '1')
 	local builderID = builder:ID()
 	local builderName = builder:Name()
 	local f = self.game:Frame()
@@ -212,13 +213,18 @@ function LabBuildHST:GetBuilderFactory(builder)
 	local factories = self:ConditionsToBuildFactories(builder)
 	self.lastCheckFrameForConName[builderName] = f
 	self.lastFactoriesForConName[builderName] = factories
+	self.game:StopTimer('GetBuilderFactory'  .. '1')
 	if not factories then return false end
+
 	for order = 1, #factories do
+
 		local factoryName = factories[order]
 		if not self.ai.buildsitehst:CheckForDuplicates(factoryName) then -- need to check for duplicates right now, not 15 seconds ago
+			self.game:StartTimer('GetBuilderFactory'  .. '3')
 			self:EchoDebug(factoryName .. ' not duplicated')
 			self:EchoDebug(builder:Name())
 			local p = self:FactoryPosition(factoryName,builder)
+			self.game:StopTimer('GetBuilderFactory'  .. '3')
 			if p then
 				if self:PostPositionalFilter(factoryName,p) then
 					self:EchoDebug(factoryName .. ' position passed filter')
@@ -231,7 +237,7 @@ function LabBuildHST:GetBuilderFactory(builder)
 end
 
 function LabBuildHST:FactoryPosition(factoryName,builder)
-	local utype = game:GetTypeByName(factoryName)
+	local utype = self.game:GetTypeByName(factoryName)
 	local mtype = self.ai.armyhst.factoryMobilities[factoryName][1]
 	local builderPos = builder:GetPosition()
 	local factoryPos
@@ -262,7 +268,7 @@ function LabBuildHST:FactoryPosition(factoryName,builder)
 			for index, hotSpot in pairs(self.ai.hotSpot) do
 				if self.ai.maphst:MobilityNetworkHere(mtype,hotSpot) then
 
-					dist = math.min(distance, self.ai.tool:Distance(hotSpot,factoryPos))
+					local dist = math.min(distance, self.ai.tool:Distance(hotSpot,factoryPos))
 					if dist < distance then
 						place = hotSpot
 						distance  = dist
@@ -326,7 +332,7 @@ function LabBuildHST:PostPositionalFilter(factoryName,p)
 		if self.ai.nameCountFinished[factoryName] and self.ai.nameCountFinished[factoryName] >= 1 and self.ai.armyhst.unitTable[factoryName].techLevel == 1 then
 			local sameLabs = Spring.GetTeamUnitsByDefs(self.ai.id, UnitDefNames[factoryName].id)
 			for ct, id in pairs(sameLabs) do
-				local sameLab = game:GetUnitByID(id)
+				local sameLab = self.game:GetUnitByID(id)
 				local sameLabPos = sameLab:GetPosition()
 				if self.ai.maphst:MobilityNetworkHere('bot',p) == self.ai.maphst:MobilityNetworkHere('bot',sameLabPos) then
 					self:EchoDebug('not duplicate t1 lab')
@@ -347,7 +353,7 @@ function LabBuildHST:PostPositionalFilter(factoryName,p)
 		if self.ai.nameCountFinished[factoryName] and self.ai.nameCountFinished[factoryName] >= 1 and self.ai.armyhst.unitTable[factoryName].techLevel == 1 then
 			local sameLabs = Spring.GetTeamUnitsByDefs(self.ai.id, UnitDefNames[factoryName].id)
 			for ct, id in pairs(sameLabs) do
-				local sameLab = game:GetUnitByID(id)
+				local sameLab = self.game:GetUnitByID(id)
 				local sameLabPos = sameLab:GetPosition()
 				if self.ai.maphst:MobilityNetworkHere('veh',p) == self.ai.maphst:MobilityNetworkHere('veh',sameLabPos) then
 					self:EchoDebug('not duplicate t1 lab')

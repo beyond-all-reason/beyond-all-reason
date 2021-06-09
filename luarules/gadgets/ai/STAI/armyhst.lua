@@ -335,19 +335,15 @@ function ArmyHST:Init()
 	}
 
 	self._solar_ = {
-		corsolar = true ,
-		armsolar = true ,
+		corsolar = 'coradvsol' ,
+		armsolar = 'armadvsol' ,
 	}
 
-	self._advsol_ = {
-		coradvsol = true ,
-		armadvsol = true ,
-	}
 
 	self._mex_ = {
 		cormex = 'cormoho' ,
-		armuwmex = 'armuwmme' ,
-		coruwmex = 'coruwmme' ,
+-- 		armuwmex = 'armuwmme' ,
+-- 		coruwmex = 'coruwmme' ,
 		cormexp = true ,
 		armmex = "armmoho" ,
 		armamex = 'armmoho' ,
@@ -400,13 +396,14 @@ function ArmyHST:Init()
 
 
 	self._fus_ = {
-		armfus = true ,
+		armfus = 'armafus' ,--will become afus in taskqueuebst:specialfilter()
 		armuwfus = true ,
-		armckfus = true ,
-		corfus = true ,
+		corfus = 'corafus' ,--will become afus in taskqueuebst:specialfilter()
 		coruwfus = true ,
-		armafus = true ,
-		corafus = true ,
+-- 		armckfus = true , --clackable, better to think about it later
+
+-- 		armafus = true ,
+-- 		corafus = true ,
 		--armdf = true, --fake fus
 	}
 
@@ -821,57 +818,6 @@ ArmyHST.nukeList = {
 	cortron = 2250,
 }
 
-
-
--- ArmyHST.Eco1={
--- 	armsolar=1,
--- 	armwin=1,
--- 	armadvsol=1,
--- 	armtide=1,
---
--- 	corsolar=1,
--- 	corwin=1,
--- 	coradvsol=1,
--- 	cortide=1,
---
--- 	corgeo=1,
--- 	armgeo=1,
---
--- 	--store
---
--- 	armestor=1,
--- 	armmstor=1,
--- 	armuwes=1,
--- 	armuwms=1,
---
--- 	corestor=1,
--- 	cormstor=1,
--- 	coruwes=1,
--- 	coruwms=1,
---
--- 	--conv
--- 	armmakr=1,
--- 	cormakr=1,
--- 	armfmkr=1,
--- 	corfmkr=1,
---
---
--- 	--metalli
--- 	corexp=1,
--- 	armamex=1,
---
--- 	cormex=1,
--- 	armmex=1,
---
--- 	armuwmex=1,
--- 	coruwmex=1,
---
--- 	armnanotc=1,
--- 	cornanotc=1,
--- 	armnanotcplat = 1,
--- 	cornanotcplat = 1,
--- }
-
 ArmyHST.cleanable = {
 	armsolar= 'ground',
 	corsolar= 'ground',
@@ -997,6 +943,7 @@ end
 local function getParalyzer(unitDefID)
 	local unitDef = UnitDefs[unitDefID]
 	local weapons = unitDef["weapons"]
+	local paralyzer = nil
 	for i=1, #weapons do
 		local weaponDefID = weapons[i]["weaponDef"]
 		local weaponDef = WeaponDefs[weaponDefID]
@@ -1082,35 +1029,35 @@ local function GetBuiltBy()
 	return builtBy
 end
 
-local function GetWeaponParams(weaponDefID)
-	local WD = WeaponDefs[weaponDefID]
-	local WDCP = WD.customParams
-	local weaponDamageSingle = tonumber(WDCP.statsdamage) or WD.damages[0] or 0
-	local weaponDamageMult = tonumber(WDCP.statsprojectiles) or ((tonumber(WDCP.script_burst) or WD.salvoSize) * WD.projectiles)
-	local weaponDamage = weaponDamageSingle * weaponDamageMult
-	local weaponRange = WD.range
-
-	local reloadTime = tonumber(WD.customParams.script_reload) or WD.reload
-
-	if WD.dyndamageexp and WD.dyndamageexp > 0 then
-		local dynDamageExp = WD.dyndamageexp
-		local dynDamageMin = WD.dyndamagemin or 0.0001
-		local dynDamageRange = WD.dyndamagerange or weaponRange
-		local dynDamageInverted = WD.dyndamageinverted or false
-		local dynMod
-
-		if dynDamageInverted then
-			dynMod = math.pow(distance3D / dynDamageRange, dynDamageExp)
-		else
-			dynMod = 1 - math.pow(distance3D / dynDamageRange, dynDamageExp)
-		end
-
-		weaponDamage = math.max(weaponDamage * dynMod, dynDamageMin)
-	end
-
-	local dps = weaponDamage / reloadTime
-	return dps, weaponDamage, reloadTime
-end
+-- local function GetWeaponParams(weaponDefID)
+-- 	local WD = WeaponDefs[weaponDefID]
+-- 	local WDCP = WD.customParams
+-- 	local weaponDamageSingle = tonumber(WDCP.statsdamage) or WD.damages[0] or 0
+-- 	local weaponDamageMult = tonumber(WDCP.statsprojectiles) or ((tonumber(WDCP.script_burst) or WD.salvoSize) * WD.projectiles)
+-- 	local weaponDamage = weaponDamageSingle * weaponDamageMult
+-- 	local weaponRange = WD.range
+--
+-- 	local reloadTime = tonumber(WD.customParams.script_reload) or WD.reload
+--
+-- 	if WD.dyndamageexp and WD.dyndamageexp > 0 then
+-- 		local dynDamageExp = WD.dyndamageexp
+-- 		local dynDamageMin = WD.dyndamagemin or 0.0001
+-- 		local dynDamageRange = WD.dyndamagerange or weaponRange
+-- 		local dynDamageInverted = WD.dyndamageinverted or false
+-- 		local dynMod
+--
+-- 		if dynDamageInverted then
+-- 			dynMod = math.pow(distance3D / dynDamageRange, dynDamageExp)
+-- 		else
+-- 			dynMod = 1 - math.pow(distance3D / dynDamageRange, dynDamageExp)
+-- 		end
+--
+-- 		weaponDamage = math.max(weaponDamage * dynMod, dynDamageMin)
+-- 	end
+--
+-- 	local dps = weaponDamage / reloadTime
+-- 	return dps, weaponDamage, reloadTime
+-- end
 
 
 
@@ -1133,7 +1080,7 @@ local function getTechTree(sideTechLv)
 		if lv == false then
 			sideTechLv[name] = parent
 			if ArmyHST.techPenalty[name] then sideTechLv[name] = sideTechLv[name] + ArmyHST.techPenalty[name] end--here cause some not corresponding at true and seaplane maybe
-			canBuild = UnitDefNames[name].buildOptions
+			local canBuild = UnitDefNames[name].buildOptions
 			if canBuild and #canBuild > 0 then
 				for index,id in pairs(UnitDefNames[name].buildOptions) do
 					if not sideTechLv[UnitDefs[id].name] then
@@ -1382,6 +1329,3 @@ getTechTree(armTechLv)
 getTechTree(corTechLv)
 for k,v in pairs(corTechLv) do unitsLevels[k] = v end
 for k,v in pairs(armTechLv) do unitsLevels[k] = v end
-
-wrecks = nil
-
